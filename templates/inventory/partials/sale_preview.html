@@ -1,0 +1,32 @@
+{% load brl %}
+{% if valido %}
+  <div class="flex items-baseline justify-between gap-3">
+    <span class="text-sm font-medium text-slate-600">Lucro líquido</span>
+    <span class="text-xl font-semibold tabular-nums {{ lucro_cents|tone }}">{{ lucro_cents|brl }}</span>
+  </div>
+
+  <div class="mt-3 grid grid-cols-3 gap-2 text-center">
+    <div class="rounded-lg bg-white px-2 py-2 ring-1 ring-slate-200">
+      <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">ROI</p>
+      <p class="mt-0.5 text-sm font-semibold tabular-nums {{ roi|tone }}">{{ roi|pct_signed }}</p>
+    </div>
+    <div class="rounded-lg bg-white px-2 py-2 ring-1 ring-slate-200">
+      <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Margem</p>
+      <p class="mt-0.5 text-sm font-semibold tabular-nums text-slate-800">{{ margem|pct }}</p>
+    </div>
+    <div class="rounded-lg bg-white px-2 py-2 ring-1 ring-slate-200">
+      <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">vs mercado</p>
+      <p class="mt-0.5 text-sm font-semibold tabular-nums {{ agio|tone }}">{{ agio|pct_signed }}</p>
+    </div>
+  </div>
+
+  {% if taxas_cents %}
+    <p class="mt-2 text-[11px] text-slate-400">
+      Venda {{ preco_cents|brl }} − taxas {{ taxas_cents|brl }} − custo {{ item.cost_cents|brl }}
+    </p>
+  {% endif %}
+{% else %}
+  <p class="text-sm text-slate-400">
+    Digite o valor da venda para ver o lucro, o ROI e a margem em tempo real.
+  </p>
+{% endif %}

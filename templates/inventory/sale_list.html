@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% load brl %}
+{% block title %}Vendas · BriqueStats{% endblock %}
+
+{% block content %}
+<div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+  <div>
+    <p class="text-xs font-semibold uppercase tracking-widest text-indigo-600">Vendas</p>
+    <h1 class="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">Histórico de vendas</h1>
+    <p class="mt-1 text-sm text-slate-500">Cada venda com lucro, ROI e canal.</p>
+  </div>
+  <a href="{% url 'item_list' %}?status=estoque" class="btn btn-secondary">Ver estoque</a>
+</div>
+
+<div class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+  <div class="card p-4">
+    <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Lucro realizado</p>
+    <p class="mt-1 text-xl font-semibold tabular-nums {{ resumo.realized_profit_cents|tone }}">{{ resumo.realized_profit_cents|brl }}</p>
+  </div>
+  <div class="card p-4">
+    <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Receita</p>
+    <p class="mt-1 text-xl font-semibold tabular-nums text-slate-900">{{ resumo.revenue_cents|brl }}</p>
+  </div>
+  <div class="card p-4">
+    <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">ROI médio</p>
+    <p class="mt-1 text-xl font-semibold tabular-nums text-slate-900">{{ resumo.roi|pct }}</p>
+  </div>
+  <div class="card p-4">
+    <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Ticket médio</p>
+    <p class="mt-1 text-xl font-semibold tabular-nums text-slate-900">{{ resumo.avg_ticket_cents|brl }}</p>
+  </div>
+</div>
+
+{% if sales %}
+  <div class="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-slate-100 text-sm">
+        <thead class="bg-slate-50/80 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+          <tr>
+            <th class="px-4 py-3">Item</th>
+            <th class="px-4 py-3">Data</th>
+            <th class="hidden px-4 py-3 sm:table-cell">Canal</th>
+            <th class="px-4 py-3 text-right">Custo</th>
+            <th class="px-4 py-3 text-right">Venda</th>
+            <th class="px-4 py-3 text-right">Lucro</th>
+            <th class="px-4 py-3 text-right">ROI</th>
+            <th class="px-4 py-3"></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          {% for sale in sales %}
+            <tr class="transition hover:bg-slate-50/70">
+              <td class="px-4 py-3">
+                <a href="{% url 'item_detail' sale.item.pk %}" class="font-medium text-slate-900 hover:text-indigo-700">{{ sale.item.name }}</a>
+                <p class="mt-0.5 text-xs text-slate-400">{{ sale.item.category.name|default:"Sem categoria" }}</p>
+              </td>
+              <td class="px-4 py-3 tabular-nums text-slate-600">{{ sale.sold_on|date:"d/m/Y" }}</td>
+              <td class="hidden px-4 py-3 sm:table-cell">
+                <span class="chip bg-slate-100 text-slate-600 ring-1 ring-slate-200">{{ sale.get_channel_display }}</span>
+              </td>
+              <td class="px-4 py-3 text-right tabular-nums text-slate-500">{{ sale.item.cost_cents|brl }}</td>
+              <td class="px-4 py-3 text-right tabular-nums text-slate-800">{{ sale.price_cents|brl }}</td>
+              <td class="px-4 py-3 text-right font-semibold tabular-nums {{ sale.profit_cents|tone }}">{{ sale.profit_cents|brl }}</td>
+              <td class="px-4 py-3 text-right tabular-nums {{ sale.roi|tone }}">{{ sale.roi|pct_signed }}</td>
+              <td class="px-4 py-3 text-right">
+                <form method="post" action="{% url 'sale_delete' sale.pk %}"
+                      onsubmit="return confirm('Desfazer a venda de “{{ sale.item.name|escapejs }}”?')">
+                  {% csrf_token %}
+                  <button type="submit" class="rounded-lg px-2 py-1 text-xs font-medium text-slate-400 transition hover:bg-rose-50 hover:text-rose-600">
+                    Desfazer
+                  </button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {% if is_paginated %}
+    <div class="mt-4 flex items-center justify-between text-sm">
+      <p class="text-xs text-slate-500">Página {{ page_obj.number }} de {{ paginator.num_pages }}</p>
+      <div class="flex gap-2">
+        {% if page_obj.has_previous %}
+          <a href="?page={{ page_obj.previous_page_number }}" class="btn btn-secondary btn-sm">Anterior</a>
+        {% endif %}
+        {% if page_obj.has_next %}
+          <a href="?page={{ page_obj.next_page_number }}" class="btn btn-secondary btn-sm">Próxima</a>
+        {% endif %}
+      </div>
+    </div>
+  {% endif %}
+{% else %}
+  <div class="card mt-6 flex flex-col items-center justify-center px-6 py-16 text-center">
+    <span class="flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600">
+      <svg class="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/></svg>
+    </span>
+    <h2 class="mt-4 text-lg font-semibold">Nenhuma venda registrada</h2>
+    <p class="mt-1 max-w-sm text-sm text-slate-500">
+      Quando você vender uma peça do estoque, ela aparece aqui com o lucro e o ROI.
+    </p>
+    <a href="{% url 'item_list' %}?status=estoque" class="btn btn-primary mt-5">Ver itens em estoque</a>
+  </div>
+{% endif %}
+{% endblock %}

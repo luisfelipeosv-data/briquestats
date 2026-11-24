@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% load brl %}
+{% block title %}Vender {{ item.name }} · BriqueStats{% endblock %}
+
+{% block content %}
+<nav class="flex items-center gap-2 text-xs font-medium text-slate-400">
+  <a href="{% url 'item_detail' item.pk %}" class="hover:text-slate-600">{{ item.name }}</a>
+  <span>/</span>
+  <span class="text-slate-600">Registrar venda</span>
+</nav>
+
+<div class="mt-3 max-w-xl">
+  <h1 class="text-2xl font-semibold tracking-tight">Registrar venda</h1>
+  <p class="mt-1 text-sm text-slate-500">
+    Custo {{ item.cost_cents|brl }}{% if item.reference_cents %} · Referência {{ item.reference_cents|brl }}{% endif %}
+  </p>
+
+  <form method="post" class="card mt-6 space-y-4 p-6">
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+      <div class="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
+        {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+      </div>
+    {% endif %}
+
+    <div class="grid gap-4 sm:grid-cols-2">
+      {% include "partials/field.html" with field=form.price_cents %}
+      {% include "partials/field.html" with field=form.fees_cents %}
+      {% include "partials/field.html" with field=form.channel %}
+      {% include "partials/field.html" with field=form.sold_on %}
+    </div>
+
+    <div id="sale-preview" class="rounded-xl border border-slate-200 bg-slate-50 p-4" aria-live="polite">
+      {% include "inventory/partials/sale_preview.html" %}
+    </div>
+
+    <div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+      <a href="{% url 'item_detail' item.pk %}" class="btn btn-secondary">Cancelar</a>
+      <button type="submit" class="btn btn-primary">Confirmar venda</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

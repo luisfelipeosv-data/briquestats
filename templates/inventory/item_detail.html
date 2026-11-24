@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+{% load brl %}
+{% block title %}{{ item.name }} · BriqueStats{% endblock %}
+
+{% block content %}
+<nav class="flex items-center gap-2 text-xs font-medium text-slate-400">
+  <a href="{% url 'item_list' %}" class="hover:text-slate-600">Inventário</a>
+  <span>/</span>
+  <span class="truncate text-slate-600">{{ item.name }}</span>
+</nav>
+
+<div class="mt-3 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+  <div>
+    <div class="flex flex-wrap items-center gap-2">
+      <span class="chip chip-{{ item.status }}">{{ item.get_status_display }}</span>
+      {% if item.category %}
+        <span class="chip chip-{{ item.category.color }}">{{ item.category.name }}</span>
+      {% endif %}
+      <span class="chip bg-slate-100 text-slate-600 ring-1 ring-slate-200">{{ item.get_condition_display }}</span>
+    </div>
+    <h1 class="mt-3 text-2xl font-semibold tracking-tight sm:text-3xl">{{ item.name }}</h1>
+    <p class="mt-1 text-sm text-slate-500">
+      Comprado em {{ item.acquired_on|date:"d/m/Y" }} ·
+      {% if item.is_sold %}vendido após {{ item.days_held }} dias{% else %}{{ item.days_held }} dias em estoque{% endif %}
+    </p>
+  </div>
+
+  <div class="flex flex-wrap gap-2">
+    {% if item.is_sold %}
+      <form method="post" action="{% url 'sale_delete' item.sale.pk %}"
+            onsubmit="return confirm('Desfazer a venda e devolver o item ao estoque?')">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-secondary">Desfazer venda</button>
+      </form>
+    {% else %}
+      <a href="{% url 'sale_create' item.pk %}"
+         hx-get="{% url 'sale_create' item.pk %}"
+         hx-target="#modal" hx-swap="innerHTML"
+         class="btn btn-primary">
+        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+        Registrar venda
+      </a>
+    {% endif %}
+    <a href="{% url 'item_update' item.pk %}" class="btn btn-secondary">Editar</a>
+  </div>
+</div>
+
+<div class="mt-6 grid items-start gap-6 lg:grid-cols-3">
+
+  <div class="space-y-6 lg:col-span-2">
+    <section class="card p-6">
+      <h2 class="text-sm font-semibold text-slate-800">Resumo financeiro</h2>
+
+      <div class="mt-4 grid gap-3 sm:grid-cols-2">
+        <div class="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+          <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Custo de aquisição</p>
+          <p class="mt-1 text-xl font-semibold tabular-nums text-slate-900">{{ item.cost_cents|brl }}</p>
+        </div>
+        <div class="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+          <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Preço de referência</p>
+          <p class="mt-1 text-xl font-semibold tabular-nums text-slate-900">{{ item.reference_cents|brl }}</p>
+          {% if item.reference_cents %}
+            <p class="mt-1 text-xs font-medium tabular-nums {{ item.discount_vs_reference|tone }}">
+              {{ item.discount_vs_reference|pct_signed }} vs mercado
+            </p>
+          {% endif %}
+        </div>
+
+        {% if item.is_sold %}
+          <div class="rounded-xl border border-indigo-200 bg-indigo-50/60 p-4">
+            <p class="text-[11px] font-semibold uppercase tracking-wider text-indigo-500">Valor de venda</p>
+            <p class="mt-1 text-xl font-semibold tabular-nums text-indigo-900">{{ item.sale.price_cents|brl }}</p>
+            {% if item.sale.fees_cents %}
+              <p class="mt-1 text-xs text-indigo-700/70">Taxas: {{ item.sale.fees_cents|brl }}</p>
+            {% endif %}
+          </div>
+          <div class="rounded-xl border p-4 {% if item.profit_cents >= 0 %}border-emerald-200 bg-emerald-50/60{% else %}border-rose-200 bg-rose-50/60{% endif %}">
+            <p class="text-[11px] font-semibold uppercase tracking-wider {% if item.profit_cents >= 0 %}text-emerald-600{% else %}text-rose-600{% endif %}">Lucro</p>
+            <p class="mt-1 text-xl font-semibold tabular-nums {{ item.profit_cents|tone }}">{{ item.profit_cents|brl }}</p>
+          </div>
+        {% endif %}
+      </div>
+
+      {% if item.is_sold %}
+        <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div class="rounded-xl bg-slate-50 p-3 text-center">
+            <p class="text-[11px] font-medium uppercase tracking-wider text-slate-400">ROI</p>
+            <p class="mt-1 text-sm font-semibold tabular-nums {{ item.roi|tone }}">{{ item.roi|pct_signed }}</p>
+          </div>
+          <div class="rounded-xl bg-slate-50 p-3 text-center">
+            <p class="text-[11px] font-medium uppercase tracking-wider text-slate-400">Margem</p>
+            <p class="mt-1 text-sm font-semibold tabular-nums text-slate-800">{{ item.margin|pct }}</p>
+          </div>
+          <div class="rounded-xl bg-slate-50 p-3 text-center">
+            <p class="text-[11px] font-medium uppercase tracking-wider text-slate-400">Ágio vs mercado</p>
+            <p class="mt-1 text-sm font-semibold tabular-nums {{ item.premium_vs_reference|tone }}">{{ item.premium_vs_reference|pct_signed }}</p>
+          </div>
+          <div class="rounded-xl bg-slate-50 p-3 text-center">
+            <p class="text-[11px] font-medium uppercase tracking-wider text-slate-400">Dias até vender</p>
+            <p class="mt-1 text-sm font-semibold tabular-nums text-slate-800">{{ item.days_held }} d</p>
+          </div>
+        </div>
+      {% else %}
+        <div class="mt-4 rounded-xl border border-dashed border-slate-200 p-4">
+          <p class="text-sm text-slate-600">
+            Este item ainda está no estoque. Ao registrar a venda, o lucro, o ROI e a
+            margem aparecem aqui automaticamente.
+          </p>
+          <a href="{% url 'sale_create' item.pk %}"
+             hx-get="{% url 'sale_create' item.pk %}"
+             hx-target="#modal" hx-swap="innerHTML"
+             class="mt-3 inline-flex text-sm font-semibold text-indigo-600 hover:text-indigo-700">
+            Registrar venda agora →
+          </a>
+        </div>
+      {% endif %}
+    </section>
+
+    <section class="card p-6">
+      <h2 class="text-sm font-semibold text-slate-800">Observações</h2>
+      {% if item.notes %}
+        <p class="mt-3 whitespace-pre-line text-sm leading-relaxed text-slate-600">{{ item.notes }}</p>
+      {% else %}
+        <p class="mt-3 text-sm text-slate-400">Nenhuma observação registrada.</p>
+      {% endif %}
+    </section>
+  </div>
+
+  <aside class="space-y-6">
+    <section class="card p-5">
+      <h2 class="text-sm font-semibold text-slate-800">Detalhes</h2>
+      <dl class="mt-4 space-y-3 text-sm">
+        <div class="flex items-center justify-between gap-4">
+          <dt class="text-slate-500">Condição</dt>
+          <dd class="font-medium text-slate-800">{{ item.get_condition_display }}</dd>
+        </div>
+        <div class="flex items-center justify-between gap-4">
+          <dt class="text-slate-500">Categoria</dt>
+          <dd class="font-medium text-slate-800">{{ item.category.name|default:"Sem categoria" }}</dd>
+        </div>
+        <div class="flex items-center justify-between gap-4">
+          <dt class="text-slate-500">Aquisição</dt>
+          <dd class="font-medium text-slate-800">{{ item.acquired_on|date:"d/m/Y" }}</dd>
+        </div>
+        {% if item.is_sold %}
+          <div class="flex items-center justify-between gap-4">
+            <dt class="text-slate-500">Venda</dt>
+            <dd class="font-medium text-slate-800">{{ item.sale.sold_on|date:"d/m/Y" }}</dd>
+          </div>
+          <div class="flex items-center justify-between gap-4">
+            <dt class="text-slate-500">Canal</dt>
+            <dd class="font-medium text-slate-800">{{ item.sale.get_channel_display }}</dd>
+          </div>
+        {% endif %}
+        <div class="flex items-center justify-between gap-4">
+          <dt class="text-slate-500">Cadastrado em</dt>
+          <dd class="font-medium text-slate-800">{{ item.created_at|date:"d/m/Y" }}</dd>
+        </div>
+      </dl>
+    </section>
+
+    <section class="card p-5">
+      <h2 class="text-sm font-semibold text-slate-800">Ações</h2>
+      <div class="mt-3 space-y-2">
+        {% if not item.is_sold %}
+          {% if item.status == 'arquivado' %}
+            <form method="post" action="{% url 'item_unarchive' item.pk %}">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-secondary w-full">Voltar ao estoque</button>
+            </form>
+          {% else %}
+            <form method="post" action="{% url 'item_archive' item.pk %}">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-secondary w-full">Arquivar item</button>
+            </form>
+          {% endif %}
+        {% endif %}
+        <form method="post" action="{% url 'item_delete' item.pk %}"
+              onsubmit="return confirm('Remover “{{ item.name|escapejs }}” definitivamente?')">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger w-full">Remover item</button>
+        </form>
+      </div>
+      {% if item.is_sold %}
+        <p class="mt-3 text-xs leading-relaxed text-slate-400">
+          Para remover um item vendido, desfaça a venda primeiro.
+        </p>
+      {% endif %}
+    </section>
+  </aside>
+</div>
+{% endblock %}

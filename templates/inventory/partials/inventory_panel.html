@@ -1,0 +1,172 @@
+{% load brl %}
+<div id="inventory-panel">
+
+  <form hx-get="{% url 'item_list' %}"
+        hx-target="#inventory-panel"
+        hx-swap="outerHTML"
+        hx-push-url="true"
+        hx-trigger="change, submit"
+        class="space-y-4">
+
+    <div class="flex flex-col gap-3 sm:flex-row">
+      <div class="relative flex-1">
+        <svg class="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+             viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>
+        </svg>
+        <input type="search" name="q" value="{{ busca }}"
+               placeholder="Buscar por nome ou observação..."
+               aria-label="Buscar itens"
+               class="w-full rounded-xl border border-slate-300 bg-white py-2.5 pl-10 pr-3 text-sm text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100"
+               hx-get="{% url 'item_list' %}"
+               hx-target="#inventory-panel"
+               hx-swap="outerHTML"
+               hx-push-url="true"
+               hx-include="closest form"
+               hx-trigger="keyup changed delay:350ms, search">
+      </div>
+
+      <select name="categoria" aria-label="Filtrar por categoria"
+              class="select-chevron w-full cursor-pointer appearance-none rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 pr-9 text-sm text-slate-700 shadow-sm outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 sm:w-52">
+        <option value="">Todas as categorias</option>
+        {% for categoria in categorias %}
+          <option value="{{ categoria.pk }}" {% if categoria_atual == categoria.pk|stringformat:"s" %}selected{% endif %}>{{ categoria.name }}</option>
+        {% endfor %}
+      </select>
+
+      <select name="ordem" aria-label="Ordenar"
+              class="select-chevron w-full cursor-pointer appearance-none rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 pr-9 text-sm text-slate-700 shadow-sm outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 sm:w-52">
+        {% for valor, rotulo in ordens %}
+          <option value="{{ valor }}" {% if ordem_atual == valor %}selected{% endif %}>{{ rotulo }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-2">
+      <label class="cursor-pointer">
+          <input type="radio" name="status" value="" class="peer sr-only" {% if not status_atual %}checked{% endif %}>
+          <span class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-medium text-slate-600 transition hover:border-slate-300 peer-checked:border-indigo-600 peer-checked:bg-indigo-600 peer-checked:text-white">
+            Todos <span class="opacity-60">{{ contagens.todos }}</span>
+          </span>
+        </label>
+        <label class="cursor-pointer">
+          <input type="radio" name="status" value="estoque" class="peer sr-only" {% if status_atual == 'estoque' %}checked{% endif %}>
+          <span class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-medium text-slate-600 transition hover:border-slate-300 peer-checked:border-emerald-600 peer-checked:bg-emerald-600 peer-checked:text-white">
+            Em estoque <span class="opacity-60">{{ contagens.estoque }}</span>
+          </span>
+        </label>
+        <label class="cursor-pointer">
+          <input type="radio" name="status" value="vendido" class="peer sr-only" {% if status_atual == 'vendido' %}checked{% endif %}>
+          <span class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-medium text-slate-600 transition hover:border-slate-300 peer-checked:border-indigo-600 peer-checked:bg-indigo-600 peer-checked:text-white">
+            Vendidos <span class="opacity-60">{{ contagens.vendido }}</span>
+          </span>
+        </label>
+        <label class="cursor-pointer">
+          <input type="radio" name="status" value="arquivado" class="peer sr-only" {% if status_atual == 'arquivado' %}checked{% endif %}>
+          <span class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-medium text-slate-600 transition hover:border-slate-300 peer-checked:border-slate-600 peer-checked:bg-slate-600 peer-checked:text-white">
+            Arquivados <span class="opacity-60">{{ contagens.arquivado }}</span>
+          </span>
+        </label>
+    </div>
+  </form>
+
+  {% if contagens.todos == 0 %}
+    <div class="mt-4 card flex flex-col items-center justify-center px-6 py-16 text-center">
+      <span class="flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600">
+        <svg class="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/><path d="M3 8l9 5 9-5"/><path d="M12 13v8"/></svg>
+      </span>
+      <h2 class="mt-4 text-lg font-semibold">Seu inventário está vazio</h2>
+      <p class="mt-1 max-w-sm text-sm text-slate-500">
+        Cadastre a primeira peça que você comprou para revender. Custo e preço de
+        referência já bastam para começar.
+      </p>
+      <a href="{% url 'item_create' %}" class="btn btn-primary mt-5">Cadastrar item</a>
+    </div>
+  {% elif not items %}
+    <div class="mt-4 card px-6 py-14 text-center">
+      <h2 class="text-base font-semibold">Nenhum item encontrado</h2>
+      <p class="mt-1 text-sm text-slate-500">Tente ajustar a busca ou os filtros.</p>
+      <a href="{% url 'item_list' %}" class="btn btn-secondary mt-4">Limpar filtros</a>
+    </div>
+  {% else %}
+    <div class="mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-slate-100 text-sm">
+          <thead class="bg-slate-50/80 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+            <tr>
+              <th class="px-4 py-3">Item</th>
+              <th class="hidden px-4 py-3 sm:table-cell">Categoria</th>
+              <th class="px-4 py-3 text-right">Custo</th>
+              <th class="hidden px-4 py-3 text-right md:table-cell">Referência</th>
+              <th class="px-4 py-3 text-right">Lucro / ROI</th>
+              <th class="px-4 py-3">Status</th>
+              <th class="px-4 py-3"></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            {% for item in items %}
+              <tr class="transition hover:bg-slate-50/70">
+                <td class="px-4 py-3">
+                  <a href="{% url 'item_detail' item.pk %}" class="font-medium text-slate-900 hover:text-indigo-700">{{ item.name }}</a>
+                  <p class="mt-0.5 text-xs text-slate-400">
+                    {{ item.acquired_on|date:"d/m/Y" }} · {{ item.days_held }} d
+                  </p>
+                </td>
+                <td class="hidden px-4 py-3 sm:table-cell">
+                  {% if item.category %}
+                    <span class="chip chip-{{ item.category.color }}">{{ item.category.name }}</span>
+                  {% else %}
+                    <span class="text-xs text-slate-400">—</span>
+                  {% endif %}
+                </td>
+                <td class="px-4 py-3 text-right tabular-nums text-slate-700">{{ item.cost_cents|brl }}</td>
+                <td class="hidden px-4 py-3 text-right tabular-nums text-slate-500 md:table-cell">{{ item.reference_cents|brl }}</td>
+                <td class="px-4 py-3 text-right">
+                  {% if item.is_sold %}
+                    <p class="font-semibold tabular-nums {{ item.profit_cents|tone }}">{{ item.profit_cents|brl }}</p>
+                    <p class="text-xs tabular-nums text-slate-400">{{ item.roi|pct }} ROI</p>
+                  {% else %}
+                    <span class="text-xs text-slate-400">—</span>
+                  {% endif %}
+                </td>
+                <td class="px-4 py-3">
+                  <span class="chip chip-{{ item.status }}">{{ item.get_status_display }}</span>
+                </td>
+                <td class="px-4 py-3 text-right">
+                  <a href="{% url 'item_detail' item.pk %}"
+                     class="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                     aria-label="Abrir {{ item.name }}">
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+                  </a>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    {% if is_paginated %}
+      <div class="mt-4 flex items-center justify-between text-sm">
+        <p class="text-xs text-slate-500">
+          Página {{ page_obj.number }} de {{ paginator.num_pages }} ·
+          {{ paginator.count }} no total
+        </p>
+        <div class="flex gap-2">
+          {% if page_obj.has_previous %}
+            <a href="?{% if base_query %}{{ base_query }}&{% endif %}page={{ page_obj.previous_page_number }}"
+               hx-get="?{% if base_query %}{{ base_query }}&{% endif %}page={{ page_obj.previous_page_number }}"
+               hx-target="#inventory-panel" hx-swap="outerHTML" hx-push-url="true"
+               class="btn btn-secondary btn-sm">Anterior</a>
+          {% endif %}
+          {% if page_obj.has_next %}
+            <a href="?{% if base_query %}{{ base_query }}&{% endif %}page={{ page_obj.next_page_number }}"
+               hx-get="?{% if base_query %}{{ base_query }}&{% endif %}page={{ page_obj.next_page_number }}"
+               hx-target="#inventory-panel" hx-swap="outerHTML" hx-push-url="true"
+               class="btn btn-secondary btn-sm">Próxima</a>
+          {% endif %}
+        </div>
+      </div>
+    {% endif %}
+  {% endif %}
+</div>

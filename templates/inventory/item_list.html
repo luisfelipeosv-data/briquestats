@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% load brl %}
+{% block title %}Inventário · BriqueStats{% endblock %}
+
+{% block content %}
+<div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+  <div>
+    <p class="text-xs font-semibold uppercase tracking-widest text-indigo-600">Inventário</p>
+    <h1 class="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">Seus itens</h1>
+    <p class="mt-1 text-sm text-slate-500">Compras, custos e o que já virou lucro.</p>
+  </div>
+  <a href="{% url 'item_create' %}" class="btn btn-primary">
+    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+    Novo item
+  </a>
+</div>
+
+<div class="mt-6">
+  {% include "inventory/partials/inventory_panel.html" %}
+</div>
+{% endblock %}

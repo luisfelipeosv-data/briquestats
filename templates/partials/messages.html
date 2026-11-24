@@ -1,0 +1,17 @@
+{% if messages %}
+  <div class="pointer-events-none fixed inset-x-0 top-4 z-50 flex flex-col items-center gap-2 px-4 sm:items-end sm:px-6">
+    {% for message in messages %}
+      <div data-toast
+           class="pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-xl border bg-white p-4 shadow-lg transition duration-300
+             {% if message.tags == 'success' %}border-emerald-200{% elif message.tags == 'error' %}border-rose-200{% elif message.tags == 'warning' %}border-amber-200{% else %}border-sky-200{% endif %}">
+        <span class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold
+          {% if message.tags == 'success' %}bg-emerald-100 text-emerald-700{% elif message.tags == 'error' %}bg-rose-100 text-rose-700{% elif message.tags == 'warning' %}bg-amber-100 text-amber-700{% else %}bg-sky-100 text-sky-700{% endif %}">
+          {% if message.tags == 'success' %}✓{% elif message.tags == 'error' %}!{% else %}i{% endif %}
+        </span>
+        <p class="flex-1 text-sm text-slate-700">{{ message }}</p>
+        <button type="button" onclick="this.closest('[data-toast]').remove()"
+                class="text-slate-400 transition hover:text-slate-600" aria-label="Fechar aviso">×</button>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}

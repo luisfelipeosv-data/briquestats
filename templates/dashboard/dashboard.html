@@ -1,0 +1,289 @@
+{% extends "base.html" %}
+{% load static brl %}
+{% block title %}Dashboard · BriqueStats{% endblock %}
+
+{% block extra_head %}
+  <script src="{% static 'vendor/chart.umd.min.js' %}" defer></script>
+{% endblock %}
+
+{% block content %}
+<div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+  <div>
+    <p class="text-xs font-semibold uppercase tracking-widest text-indigo-600">Dashboard</p>
+    <h1 class="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">Olá, {{ user.username }}</h1>
+    <p class="mt-1 text-sm text-slate-500">O retrato do seu negócio de revenda, em tempo real.</p>
+  </div>
+  <div class="flex gap-2">
+    <a href="{% url 'item_list' %}" class="btn btn-secondary">Ver inventário</a>
+    <a href="{% url 'item_create' %}" class="btn btn-primary">
+      <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      Novo item
+    </a>
+  </div>
+</div>
+
+{% if not tem_dados %}
+  <div class="card mt-8 overflow-hidden">
+    <div class="grid gap-6 p-6 sm:p-10 lg:grid-cols-2 lg:items-center">
+      <div>
+        <span class="chip chip-estoque">Primeiro passo</span>
+        <h2 class="mt-4 text-2xl font-semibold tracking-tight">Comece cadastrando o que você comprou</h2>
+        <p class="mt-2 text-sm leading-relaxed text-slate-600">
+          Informe o custo e, se quiser, o preço de mercado. Quando vender, o
+          BriqueStats calcula lucro, ROI e margem automaticamente.
+        </p>
+        <div class="mt-6 flex flex-wrap gap-3">
+          <a href="{% url 'item_create' %}" class="btn btn-primary">Cadastrar primeiro item</a>
+          <a href="{% url 'category_list' %}" class="btn btn-secondary">Criar categorias</a>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+          <p class="text-xs font-medium uppercase tracking-wider text-slate-400">Custo</p>
+          <p class="mt-1 text-lg font-semibold text-slate-800">R$ 180,00</p>
+        </div>
+        <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+          <p class="text-xs font-medium uppercase tracking-wider text-slate-400">Mercado</p>
+          <p class="mt-1 text-lg font-semibold text-slate-800">R$ 320,00</p>
+        </div>
+        <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+          <p class="text-xs font-medium uppercase tracking-wider text-emerald-600">Venda</p>
+          <p class="mt-1 text-lg font-semibold text-emerald-800">R$ 300,00</p>
+        </div>
+        <div class="rounded-xl border border-indigo-200 bg-indigo-50 p-4">
+          <p class="text-xs font-medium uppercase tracking-wider text-indigo-600">ROI</p>
+          <p class="mt-1 text-lg font-semibold text-indigo-800">+66,7%</p>
+        </div>
+      </div>
+    </div>
+  </div>
+{% else %}
+
+  {# ---------------- KPIs ---------------- #}
+  <div class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div class="card p-5">
+      <div class="flex items-start justify-between">
+        <p class="text-xs font-medium uppercase tracking-wider text-slate-500">Capital em estoque</p>
+        <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/><path d="M3 8l9 5 9-5"/></svg>
+        </span>
+      </div>
+      <p class="kpi mt-3">{{ metrics.stock_cents|brl }}</p>
+      <p class="mt-1 text-xs text-slate-500">{{ metrics.stock_count }} ite{{ metrics.stock_count|pluralize:"m,ns" }} parado{{ metrics.stock_count|pluralize:"s" }} no estoque</p>
+    </div>
+
+    <div class="card p-5">
+      <div class="flex items-start justify-between">
+        <p class="text-xs font-medium uppercase tracking-wider text-slate-500">Lucro realizado</p>
+        <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M21 7v6h-6"/></svg>
+        </span>
+      </div>
+      <p class="kpi mt-3 {{ metrics.realized_profit_cents|tone }}">{{ metrics.realized_profit_cents|brl }}</p>
+      <p class="mt-1 text-xs text-slate-500">{{ metrics.sold_count }} venda{{ metrics.sold_count|pluralize }} registrada{{ metrics.sold_count|pluralize:"s" }}</p>
+    </div>
+
+    <div class="card p-5">
+      <div class="flex items-start justify-between">
+        <p class="text-xs font-medium uppercase tracking-wider text-slate-500">ROI médio</p>
+        <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+        </span>
+      </div>
+      <p class="kpi mt-3">{{ metrics.roi|pct }}</p>
+      <p class="mt-1 text-xs text-slate-500">ponderado pelo custo investido</p>
+    </div>
+
+    <div class="card p-5">
+      <div class="flex items-start justify-between">
+        <p class="text-xs font-medium uppercase tracking-wider text-slate-500">Giro médio</p>
+        <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-50 text-sky-600">
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        </span>
+      </div>
+      <p class="kpi mt-3">{{ metrics.avg_days_held|dias }}</p>
+      <p class="mt-1 text-xs text-slate-500">tempo médio até a venda</p>
+    </div>
+  </div>
+
+  {# ---------------- Gráficos ---------------- #}
+  <div class="mt-6 grid gap-6 lg:grid-cols-5">
+    <div class="card p-5 lg:col-span-3">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-sm font-semibold text-slate-800">Lucro por mês</h2>
+          <p class="text-xs text-slate-500">Últimos 12 meses</p>
+        </div>
+        <span class="chip chip-vendido">{{ metrics.revenue_cents|brl }} em receita</span>
+      </div>
+      <div class="mt-4 h-64"><canvas id="chart-monthly" aria-label="Lucro por mês" role="img"></canvas></div>
+    </div>
+
+    <div class="card p-5 lg:col-span-2">
+      <div>
+        <h2 class="text-sm font-semibold text-slate-800">ROI por categoria</h2>
+        <p class="text-xs text-slate-500">Onde seu capital rende mais</p>
+      </div>
+      {% if categorias_roi %}
+        <div class="mt-4 h-64"><canvas id="chart-categories" aria-label="ROI por categoria" role="img"></canvas></div>
+      {% else %}
+        <div class="mt-4 flex h-64 flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 text-center">
+          <p class="text-sm font-medium text-slate-600">Sem vendas ainda</p>
+          <p class="mt-1 max-w-[16rem] text-xs text-slate-400">Registre uma venda para comparar o ROI entre categorias.</p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  {# ---------------- Listas ---------------- #}
+  <div class="mt-6 grid gap-6 lg:grid-cols-2">
+    <div class="card">
+      <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+        <h2 class="text-sm font-semibold text-slate-800">Itens mais lucrativos</h2>
+        <a href="{% url 'sale_list' %}" class="text-xs font-medium text-indigo-600 hover:text-indigo-700">Ver vendas</a>
+      </div>
+      {% if top_items %}
+        <ul class="divide-y divide-slate-100">
+          {% for item in top_items %}
+            <li class="flex items-center gap-3 px-5 py-3">
+              <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-xs font-semibold text-slate-500">
+                {{ forloop.counter }}
+              </span>
+              <div class="min-w-0 flex-1">
+                <a href="{% url 'item_detail' item.pk %}" class="block truncate text-sm font-medium text-slate-800 hover:text-indigo-700">{{ item.name }}</a>
+                <p class="text-xs text-slate-400">{{ item.category.name|default:"Sem categoria" }} · {{ item.roi|pct }} ROI</p>
+              </div>
+              <span class="text-sm font-semibold tabular-nums text-emerald-600">{{ item.profit_cents|brl }}</span>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="px-5 py-8 text-center text-sm text-slate-400">Nenhuma venda registrada ainda.</p>
+      {% endif %}
+    </div>
+
+    <div class="card">
+      <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+        <h2 class="text-sm font-semibold text-slate-800">Últimas vendas</h2>
+        <a href="{% url 'sale_list' %}" class="text-xs font-medium text-indigo-600 hover:text-indigo-700">Ver todas</a>
+      </div>
+      {% if recent_sales %}
+        <ul class="divide-y divide-slate-100">
+          {% for sale in recent_sales %}
+            <li class="flex items-center gap-3 px-5 py-3">
+              <div class="min-w-0 flex-1">
+                <a href="{% url 'item_detail' sale.item.pk %}" class="block truncate text-sm font-medium text-slate-800 hover:text-indigo-700">{{ sale.item.name }}</a>
+                <p class="text-xs text-slate-400">{{ sale.sold_on|date:"d/m/Y" }} · {{ sale.get_channel_display }}</p>
+              </div>
+              <div class="text-right">
+                <p class="text-sm font-semibold tabular-nums text-slate-800">{{ sale.price_cents|brl }}</p>
+                <p class="text-xs font-medium tabular-nums {{ sale.profit_cents|tone }}">{{ sale.profit_cents|brl }}</p>
+              </div>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="px-5 py-8 text-center text-sm text-slate-400">Nada por aqui ainda.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  {{ chart_data|json_script:"chart-data" }}
+  <script>
+    window.addEventListener("DOMContentLoaded", function () {
+      if (typeof Chart === "undefined") return;
+      var dados = JSON.parse(document.getElementById("chart-data").textContent);
+      var reais = function (v) {
+        return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+      };
+
+      Chart.defaults.font.family = getComputedStyle(document.body).fontFamily;
+      Chart.defaults.color = "#64748b";
+
+      var mensal = document.getElementById("chart-monthly");
+      if (mensal && dados.monthly.labels.length) {
+        new Chart(mensal, {
+          type: "bar",
+          data: {
+            labels: dados.monthly.labels,
+            datasets: [{
+              label: "Lucro",
+              data: dados.monthly.profit,
+              backgroundColor: "#6366f1",
+              hoverBackgroundColor: "#4f46e5",
+              borderRadius: 6,
+              maxBarThickness: 34
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                callbacks: {
+                  label: function (ctx) {
+                    return "Lucro: " + reais(ctx.parsed.y) +
+                      " · " + dados.monthly.count[ctx.dataIndex] + " venda(s)";
+                  }
+                }
+              }
+            },
+            scales: {
+              x: { grid: { display: false }, border: { display: false } },
+              y: {
+                beginAtZero: true,
+                grid: { color: "#f1f5f9" },
+                border: { display: false },
+                ticks: { callback: function (v) { return "R$ " + v.toLocaleString("pt-BR"); } }
+              }
+            }
+          }
+        });
+      }
+
+      var cats = document.getElementById("chart-categories");
+      if (cats && dados.categories.labels.length) {
+        new Chart(cats, {
+          type: "bar",
+          data: {
+            labels: dados.categories.labels,
+            datasets: [{
+              label: "ROI",
+              data: dados.categories.roi,
+              backgroundColor: "#8b5cf6",
+              hoverBackgroundColor: "#7c3aed",
+              borderRadius: 6,
+              maxBarThickness: 26
+            }]
+          },
+          options: {
+            indexAxis: "y",
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                callbacks: {
+                  label: function (ctx) {
+                    return ctx.parsed.x.toLocaleString("pt-BR", { maximumFractionDigits: 1 }) + "% de ROI";
+                  }
+                }
+              }
+            },
+            scales: {
+              x: {
+                beginAtZero: true,
+                grid: { color: "#f1f5f9" },
+                border: { display: false },
+                ticks: { callback: function (v) { return v + "%"; } }
+              },
+              y: { grid: { display: false }, border: { display: false } }
+            }
+          }
+        });
+      }
+    });
+  </script>
+{% endif %}
+{% endblock %}

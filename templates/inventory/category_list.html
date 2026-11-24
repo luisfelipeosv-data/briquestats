@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Categorias · BriqueStats{% endblock %}
+
+{% block content %}
+<div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+  <div>
+    <p class="text-xs font-semibold uppercase tracking-widest text-indigo-600">Categorias</p>
+    <h1 class="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">Tipos de produto</h1>
+    <p class="mt-1 text-sm text-slate-500">Agrupe o inventário para comparar o desempenho de cada nicho.</p>
+  </div>
+</div>
+
+<div class="mt-6 grid items-start gap-6 lg:grid-cols-3">
+  <section class="card p-6">
+    <h2 class="text-sm font-semibold text-slate-800">Nova categoria</h2>
+    <p class="mt-1 text-xs text-slate-500">Ex.: Eletrodomésticos, PC &amp; Hardware, Automotivo.</p>
+
+    <form method="post" class="mt-4 space-y-4">
+      {% csrf_token %}
+      {% include "partials/field.html" with field=form.name %}
+      {% include "partials/field.html" with field=form.color %}
+      <button type="submit" class="btn btn-primary w-full">Criar categoria</button>
+    </form>
+  </section>
+
+  <section class="lg:col-span-2">
+    {% if categorias %}
+      <div class="space-y-3">
+        {% for categoria in categorias %}
+          <div class="card flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div class="flex items-center gap-3">
+              <span class="chip chip-{{ categoria.color }}">{{ categoria.name }}</span>
+              <div class="text-xs text-slate-500">
+                <span class="font-medium text-slate-700">{{ categoria.total }}</span> item{{ categoria.total|pluralize }}
+                · <span class="font-medium text-slate-700">{{ categoria.em_estoque }}</span> em estoque
+              </div>
+            </div>
+            <div class="flex items-center gap-1">
+              <a href="{% url 'item_list' %}?categoria={{ categoria.pk }}"
+                 class="btn btn-ghost btn-sm">Ver itens</a>
+              <a href="{% url 'category_update' categoria.pk %}"
+                 hx-get="{% url 'category_update' categoria.pk %}"
+                 hx-target="#modal" hx-swap="innerHTML"
+                 class="btn btn-secondary btn-sm">Editar</a>
+              <form method="post" action="{% url 'category_delete' categoria.pk %}"
+                    onsubmit="return confirm('Excluir a categoria “{{ categoria.name|escapejs }}”? Os itens continuam no inventário, mas sem categoria.')">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger btn-sm">Excluir</button>
+              </form>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="card flex flex-col items-center justify-center px-6 py-16 text-center">
+        <span class="flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600">
+          <svg class="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><circle cx="7" cy="7" r="1"/></svg>
+        </span>
+        <h2 class="mt-4 text-lg font-semibold">Nenhuma categoria ainda</h2>
+        <p class="mt-1 max-w-sm text-sm text-slate-500">
+          Crie a primeira ao lado. Depois de algumas vendas, você compara o ROI
+          entre os nichos no dashboard.
+        </p>
+      </div>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

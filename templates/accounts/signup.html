@@ -1,0 +1,30 @@
+{% extends "base_auth.html" %}
+{% block title %}Criar conta · BriqueStats{% endblock %}
+
+{% block content %}
+  <h2 class="text-2xl font-semibold tracking-tight">Criar conta</h2>
+  <p class="mt-1.5 text-sm text-slate-500">
+    Já tem conta?
+    <a href="{% url 'login' %}" class="font-medium text-indigo-600 hover:text-indigo-700">Entrar</a>.
+  </p>
+
+  {% if form.non_field_errors %}
+    <div class="mt-6 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
+      {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+    </div>
+  {% endif %}
+
+  <form method="post" class="mt-8 space-y-4">
+    {% csrf_token %}
+    {% include "partials/field.html" with field=form.username %}
+    {% include "partials/field.html" with field=form.email %}
+    {% include "partials/field.html" with field=form.password1 %}
+    {% include "partials/field.html" with field=form.password2 %}
+
+    <div class="rounded-xl bg-slate-50 p-3 text-xs leading-relaxed text-slate-500">
+      Seus dados ficam isolados: nenhum outro usuário vê seu inventário.
+    </div>
+
+    <button type="submit" class="btn btn-primary w-full">Criar minha conta</button>
+  </form>
+{% endblock %}
