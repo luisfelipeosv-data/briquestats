@@ -1,0 +1,26 @@
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Ambiente
+.env
+db.sqlite3
+db.sqlite3-journal
+
+# Estáticos gerados
+staticfiles/*
+!staticfiles/.gitkeep
+bin/tailwindcss
+
+# Ferramentas
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Editor / SO
+.idea/
+.vscode/
+.DS_Store
